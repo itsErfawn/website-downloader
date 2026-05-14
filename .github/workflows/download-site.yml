@@ -1,0 +1,54 @@
+name: "🌐 دانلود خودکار سایت (مقابله با محدودیت نت)"
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'آدرس سایت مقصد (مثل: https://react.dev)'
+        required: true
+        type: string
+        default: 'https://react.dev'
+      options:
+        description: 'آپشن های دانلود (مثل: --mirror --convert-links)'
+        required: false
+        type: string
+        default: '--mirror --convert-links --adjust-extension --page-requisites --no-parent'
+
+jobs:
+  download_site:
+    name: "🚀 دانلود از طریق ریجن آزاد"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "📁 آماده‌سازی فضای ذخیره"
+        run: mkdir -p ./download_output
+
+      - name: "⚙️ نصب ابزار Wget"
+        run: sudo apt-get update && sudo apt-get install -y wget
+
+      - name: "🌍 دانلود محتوا از ${{ github.event.inputs.target_url }}"
+        run: |
+          cd ./download_output
+          # این دستور، کل سایت را آینه می‌کند
+          wget \
+          --recursive \
+          --level=inf \
+          --no-verbose \
+          --convert-links \
+          --adjust-extension \
+          --page-requisites \
+          --no-parent \
+          --wait=2 \
+          --random-wait \
+          --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" \
+          ${{ github.event.inputs.target_url }}
+          cd ..
+
+      
+      - name: "🗜️ فشرده‌سازی خروجی به ZIP"
+        run: zip -r site_backup.zip ./download_output
+
+      - name: "📤 آپلود فایل به گیت‌هاب"
+        uses: actions/upload-artifact@v4
+        with:
+          name: "downloaded-site-${{ github.run_id }}"
+          path: site_backup.zip
+          retention-days: 7 
